@@ -1,0 +1,1195 @@
+[
+    {
+        "id": "7300a43a.5e254c",
+        "type": "tab",
+        "label": "Honeywell Lyric Integration",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "c66e693f.658c18",
+        "type": "http request",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 811.8050003051758,
+        "y": 715.0708160400391,
+        "wires": [
+            [
+                "1b7b0564.23383b"
+            ]
+        ]
+    },
+    {
+        "id": "6fa5bda1.512264",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Get Location ID",
+        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v1/locations?apikey=\"+global.get(\"honeywellAPIKey\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;\n\n\n//\"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=8bFYM0sl5YI7SyYgzz4Qv7IqqBUq19Do&locationId=138889\",",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 645.8015975952148,
+        "y": 715.1334285736084,
+        "wires": [
+            [
+                "c66e693f.658c18"
+            ]
+        ]
+    },
+    {
+        "id": "fb81a72c.a3b518",
+        "type": "http request",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 628.8605270385742,
+        "y": 669.3209447860718,
+        "wires": [
+            [
+                "aea91182.42ae4",
+                "7c70ff8c.3052"
+            ]
+        ]
+    },
+    {
+        "id": "6cf25dd8.886894",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Request Acess Token",
+        "func": "var b = new Buffer(global.get(\"honeywellAPIKey\")+\":\"+global.get(\"honeywellConsumerSecert\"));\nglobal.set(\"honeywellOauth2Token\", b.toString('base64'));\n\nvar LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/oauth2/token\",\n    \"method\": \"POST\",\n    headers:\n    {\n        \"Authorization\":global.get(\"honeywellOauth2Token\"),\n        \"Content-Type\": \"application/x-www-form-urlencoded\"\n    },\n    payload:\n    {\n        \"grant_type\":\"refresh_token\",\n        \"refresh_token\":global.get(\"honeywellLyricRefreshToken\")\n    }\n};\n    //node.warn(LyricCMDmsg);\n    node.send(LyricCMDmsg);\nreturn; ",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 439.85700607299805,
+        "y": 669.383318901062,
+        "wires": [
+            [
+                "fb81a72c.a3b518"
+            ]
+        ]
+    },
+    {
+        "id": "57ed4a3f.e038c4",
+        "type": "inject",
+        "z": "7300a43a.5e254c",
+        "name": "Request every 15 min",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "3600",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "",
+        "x": 190.04230499267578,
+        "y": 668.8270740509033,
+        "wires": [
+            [
+                "6cf25dd8.886894"
+            ]
+        ]
+    },
+    {
+        "id": "aea91182.42ae4",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Set Access Token",
+        "rules": [
+            {
+                "t": "set",
+                "p": "honeywellLyricAccessToken",
+                "pt": "global",
+                "to": "payload.access_token",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 455.86048126220703,
+        "y": 715.3208055496216,
+        "wires": [
+            [
+                "6fa5bda1.512264"
+            ]
+        ]
+    },
+    {
+        "id": "99fb2b9a.23c438",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Honeywell Lyric Integration",
+        "func": "var honeywellLyric=msg.payload;\nvar msgs=[];\n\nif (typeof context.global.LyricState=='undefined'){ context.global.LyricState = new Object({}); }\n\nif (Object.prototype.toString.call(honeywellLyric)==='[object Array]'){\n    \n    honeywellLyric.forEach(function (therm) {\n\n        //node.warn(\"Importing: \"+therm.name+\" thermostat\");\n        \n        context.global.LyricState[therm.name] = {\n            \"name\":therm.name,\n            \"eco_system\": \"Honeywell Lyric\",\n            \"device_id\": therm.deviceID,\n            \"device_manufacturer\":\"Honeywell\",\n            \"object_type\": therm.deviceType.toLowerCase(),\n            \"last_reading\": {\n                \"connection\": therm.isProvisioned,\n                \"mode\": therm.changeableValues.mode,\n                \"fan_mode\": therm.settings.fan.changeableValues.mode,\n                \"temperature\": therm.indoorTemperature,\n                \"units\":therm.units,\n                \"humidity\": therm.displayedOutdoorHumidity,\n                \"external_temperature\": therm.outdoorTemperature,\n                \"powered\": therm.operationStatus.mode,\n                \"users_away\":therm.vacationHold.enabled,\n                \"scheduleStatus\":therm.scheduleStatus,\n                \"cool_set_point\": therm.changeableValues.coolSetpoint,\n                \"heat_set_point\": therm.changeableValues.heatSetpoint,\n                \"minHeatSetpoint\": therm.minHeatSetpoint,\n                \"maxHeatSetpoint\": therm.maxHeatSetpoint,\n                \"minCoolSetpoint\": therm.minCoolSetpoint,\n                \"maxCoolSetpoint\": therm.maxCoolSetpoint,\n                \"heatCoolMode\": therm.operationStatus.mode\n            },\n\n        };\n\n        //node.warn(context.global.LyricState[therm.name]);\n\n        msgs.push({name: context.global.LyricState[therm.name].name,\n            payload: context.global.LyricState[therm.name]});\n    });//for each therm\n}\n\nreturn {msgs};\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1016.8959350585938,
+        "y": 822.8944702148438,
+        "wires": [
+            [
+                "68be8150.0568"
+            ]
+        ]
+    },
+    {
+        "id": "31b7a72d.63c9d8",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1171.5641784667969,
+        "y": 714.3775815963745,
+        "wires": []
+    },
+    {
+        "id": "a0a87f8.0de4a8",
+        "type": "http request",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "method": "use",
+        "ret": "txt",
+        "url": "",
+        "tls": "",
+        "x": 473.7627143859863,
+        "y": 884.8888626098633,
+        "wires": [
+            [
+                "62be0782.0f7348"
+            ]
+        ]
+    },
+    {
+        "id": "8cadecd0.d8e9f",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Set Thermostat",
+        "func": "var thermostat = \"Living room\";\n//return context.global.executeLyricTstatCMD(thermostat,\"fan\",\"auto\");\nreturn context.global.executeLyricTstatCMD(thermostat,\"temperature\",\"71\");\n//return context.global.executeLyricTstatCMD(thermostat,\"mode\",\"cool\");\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 303.7592658996582,
+        "y": 884.9514572620392,
+        "wires": [
+            [
+                "a0a87f8.0de4a8"
+            ]
+        ]
+    },
+    {
+        "id": "6697f3be.03e53c",
+        "type": "inject",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 136.63637161254883,
+        "y": 884.9179763793945,
+        "wires": [
+            [
+                "8cadecd0.d8e9f"
+            ]
+        ]
+    },
+    {
+        "id": "62be0782.0f7348",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 612.7037353515625,
+        "y": 885.0137939453125,
+        "wires": []
+    },
+    {
+        "id": "620f24f5.40413c",
+        "type": "http request",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 476.3080749511719,
+        "y": 975.5858764648438,
+        "wires": [
+            [
+                "30507bfe.debcc4"
+            ]
+        ]
+    },
+    {
+        "id": "b947bf90.cc92e",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Get Thermostat",
+        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 300.304744720459,
+        "y": 974.6484031677246,
+        "wires": [
+            [
+                "620f24f5.40413c"
+            ]
+        ]
+    },
+    {
+        "id": "d6d416.18143be8",
+        "type": "inject",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 134.72735214233398,
+        "y": 974.6147727966309,
+        "wires": [
+            [
+                "b947bf90.cc92e"
+            ]
+        ]
+    },
+    {
+        "id": "30507bfe.debcc4",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 681.2491149902344,
+        "y": 975.7108154296875,
+        "wires": []
+    },
+    {
+        "id": "7c70ff8c.3052",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "payload",
+        "x": 827.8049621582031,
+        "y": 669.070725440979,
+        "wires": []
+    },
+    {
+        "id": "ec18394b.b39f78",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "honeywellLyricLocationID",
+        "rules": [
+            {
+                "t": "set",
+                "p": "honeywellLyricLocationID",
+                "pt": "global",
+                "to": "payload.locationID",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "honeywellLyricLocationID",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 494.8048858642578,
+        "y": 770.0707788467407,
+        "wires": [
+            [
+                "bed9d9ce.c43658"
+            ]
+        ]
+    },
+    {
+        "id": "57e4ecd7.6141b4",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 1056.8048934936523,
+        "y": 770.0707168579102,
+        "wires": []
+    },
+    {
+        "id": "1b7b0564.23383b",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Parse payload",
+        "func": "var msgs = [];\nfor (var i = 0; i< msg.payload.length; i++) {\n  msgs.push({payload: msg.payload[i]});\n}\n\nreturn msgs;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 983.7459411621094,
+        "y": 714.5429410934448,
+        "wires": [
+            [
+                "ec18394b.b39f78",
+                "31b7a72d.63c9d8"
+            ]
+        ]
+    },
+    {
+        "id": "b4eacba4.f98d58",
+        "type": "http request",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 864.8048782348633,
+        "y": 770.0707082748413,
+        "wires": [
+            [
+                "57e4ecd7.6141b4",
+                "99fb2b9a.23c438"
+            ]
+        ]
+    },
+    {
+        "id": "bed9d9ce.c43658",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Get Devices",
+        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;\n\n//\"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=8bFYM0sl5YI7SyYgzz4Qv7IqqBUq19Do&locationId=138889\",",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 699.8014755249023,
+        "y": 770.1333208084106,
+        "wires": [
+            [
+                "b4eacba4.f98d58"
+            ]
+        ]
+    },
+    {
+        "id": "6c7c2f8b.bed54",
+        "type": "http in",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "url": "/red/honeywell",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 136.8958511352539,
+        "y": 258.888916015625,
+        "wires": [
+            [
+                "a9f57a7e.f904f8"
+            ]
+        ]
+    },
+    {
+        "id": "a9f57a7e.f904f8",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Get an Authorization Code",
+        "func": "//context.global.honeywellAPIKey = \"Aslo1eCD14GdoY3ZhSThJQWsGg7WhO4G\";\n//context.global.honeywellConsumerSecert = \"IJtovHsJ6MXABudi\";\n//context.global.redirectURI = context.global.redirectURI;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 368.89581298828125,
+        "y": 258.88885498046875,
+        "wires": [
+            [
+                "c3c8be8e.35ab8",
+                "c5a644e3.0da538"
+            ]
+        ]
+    },
+    {
+        "id": "c3c8be8e.35ab8",
+        "type": "http response",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "x": 591.8958435058594,
+        "y": 258.888916015625,
+        "wires": []
+    },
+    {
+        "id": "907f62d7.c1f1b",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 505.895751953125,
+        "y": 347.88885498046875,
+        "wires": []
+    },
+    {
+        "id": "c5a644e3.0da538",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "honeywellAPIcode",
+        "rules": [
+            {
+                "t": "set",
+                "p": "honeywellAPIcode",
+                "pt": "flow",
+                "to": "payload.code",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 320,
+        "y": 307,
+        "wires": [
+            [
+                "91b3b5a6.8e6f18",
+                "907f62d7.c1f1b"
+            ]
+        ]
+    },
+    {
+        "id": "91b3b5a6.8e6f18",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Create a Token",
+        "func": "var apiKey = global.get(\"honeywellAPIKey\");\nvar consumerSecert = global.get(\"honeywellConsumerSecert\");\nvar b = new Buffer(apiKey+\":\"+consumerSecert);\n//msg.payload = b.toString('base64');\nglobal.set(\"honeywellOauth2Token\", b.toString('base64'));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 522,
+        "y": 308,
+        "wires": [
+            [
+                "7321c8af.976358"
+            ]
+        ]
+    },
+    {
+        "id": "9ec16c1a.7eff2",
+        "type": "http request",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 920,
+        "y": 308,
+        "wires": [
+            [
+                "12a79e5.9c22362",
+                "3207e8c6.74d368",
+                "cbc2ea.829b4d18"
+            ]
+        ]
+    },
+    {
+        "id": "7321c8af.976358",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Request Acess Token",
+        "func": "//context.global.redirectURI = context.global.redirectURI.toLowerCase();\n\nvar LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/oauth2/token\",\n    \"method\": \"POST\",\n    headers:\n    {\n        \"Authorization\":global.get(\"honeywellOauth2Token\"),\n        \"Content-Type\": \"application/x-www-form-urlencoded\"\n    },\n    payload:\n    {\n        \"grant_type\":\"authorization_code\",\n        \"redirect_uri\":global.get(\"redirectURI\"),\n        \"code\":flow.get(\"honeywellAPIcode\")\n    }\n};\n    node.send(LyricCMDmsg);\nreturn; ",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 728.9964599609375,
+        "y": 308.0623779296875,
+        "wires": [
+            [
+                "9ec16c1a.7eff2",
+                "b26037ad.dff548"
+            ]
+        ]
+    },
+    {
+        "id": "12a79e5.9c22362",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 1062.9444580078125,
+        "y": 275.7497863769531,
+        "wires": []
+    },
+    {
+        "id": "3207e8c6.74d368",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Set honeywellLyricRefreshToken",
+        "rules": [
+            {
+                "t": "set",
+                "p": "honeywellLyricRefreshToken",
+                "pt": "global",
+                "to": "payload.refresh_token",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "honeywellLyricAccessToken",
+                "pt": "global",
+                "to": "payload.access_token",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1143,
+        "y": 308,
+        "wires": [
+            [
+                "ed34b654.6ac798"
+            ]
+        ]
+    },
+    {
+        "id": "ddd29b37.f3cad8",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "API Access Authentication Flow",
+        "info": "",
+        "x": 174,
+        "y": 222,
+        "wires": []
+    },
+    {
+        "id": "e9a9ee82.bded5",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "Device Access and Integration Flow",
+        "info": "",
+        "x": 189,
+        "y": 573,
+        "wires": []
+    },
+    {
+        "id": "a1af94dc.6dab28",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "Sample Flow for setting device data",
+        "info": "",
+        "x": 190.99998474121094,
+        "y": 846,
+        "wires": []
+    },
+    {
+        "id": "22cf16a.62393ea",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "Sample Flow for getting device data",
+        "info": "",
+        "x": 192,
+        "y": 933,
+        "wires": []
+    },
+    {
+        "id": "b26037ad.dff548",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 899,
+        "y": 274,
+        "wires": []
+    },
+    {
+        "id": "c2803938.8f8ff8",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Display honeywellLyricRefreshToken",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "honeywellLyricRefreshToken",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 376,
+        "y": 1078,
+        "wires": [
+            [
+                "a4a9eac1.0ed5a8"
+            ]
+        ]
+    },
+    {
+        "id": "a4a9eac1.0ed5a8",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 620,
+        "y": 1078,
+        "wires": []
+    },
+    {
+        "id": "d8f0a87f.c4f298",
+        "type": "inject",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 138,
+        "y": 1078,
+        "wires": [
+            [
+                "c2803938.8f8ff8",
+                "16218c19.364d84",
+                "947e9eb6.caec2"
+            ]
+        ]
+    },
+    {
+        "id": "c37be219.9fc75",
+        "type": "http response",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "x": 454.9999694824219,
+        "y": 77,
+        "wires": []
+    },
+    {
+        "id": "af79ecc1.9d977",
+        "type": "http in",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "url": "/lyric",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 108,
+        "y": 77.23333740234375,
+        "wires": [
+            [
+                "e9b4ecec.6062e"
+            ]
+        ]
+    },
+    {
+        "id": "e9b4ecec.6062e",
+        "type": "template",
+        "z": "7300a43a.5e254c",
+        "name": "Data Request form",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "\n</form>\n<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <title>My test page</title>\n    <style>\n      form \n\t  {\n        /* Just to center the form on the page */\n        margin: 0 auto;\n        width: 400px;\n        /* To see the outline of the form */\n        padding: 1em;\n        border: 1px solid #CCC;\n        border-radius: 1em;\n      }\n\n      form div + div {\n        margin-top: 1em;\n      }\n \n      label {\n        /* To make sure that all labels have the same size and are properly aligned */\n        display: inline-block;\n        width: 90px;\n        text-align: right;\n      }\n      \n      input, textarea {\n      /* To make sure that all text fields have the same font settings\n      By default, textareas have a monospace font */\n      font: 1em sans-serif;\n\n      /* To give the same size to all text fields */\n      width: 300px;\n      box-sizing: border-box;\n\n      /* To harmonize the look & feel of text field border */\n      border: 1px solid #999;\n      }\n\n      .button {\n      /* To position the buttons to the same position of the text fields */\n        padding-left: 90px; /* same size as the label elements */\n\t  }\n\n      button {\n        /* This extra margin represent roughly the same space as the space\n        between the labels and their text fields */\n        margin-left: .5em;\n      }\n    </style\n  </head>\n  <body>\n  <form action=\"/lyric\" method=\"post\">\n    <div>\n      <label for=\"redirect\">Redirect URI:</label>\n      <input type=\"text\" id=\"redirect\" name=\"redirect_uri\">\n    </div>\n    <div>\n      <label for=\"api\">Consumer Key:</label>\n      <input type=\"text\" id=\"api\" name=\"client_id\">\n    </div>\n    <div>\n      <label for=\"secert\">Consumer Secert:</label>\n      <input type=\"text\" id=\"secert\" name=\"consumer_sercet\">\n    </div>\n    <div>\n      <label for=\"app\">App Name:</label>\n      <input type=\"text\" id=\"app\" name=\"app_name\">\n    </div>\n    <div>\n    <div class=\"button\">\n      <button type=\"submit\">Save Data</button>\n    </div>\n  </body>\n</html>",
+        "output": "str",
+        "x": 288,
+        "y": 77,
+        "wires": [
+            [
+                "c37be219.9fc75"
+            ]
+        ]
+    },
+    {
+        "id": "2a432106.61d33e",
+        "type": "http in",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "url": "/lyric",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 107,
+        "y": 114,
+        "wires": [
+            [
+                "bdff45ff.0e79b8"
+            ]
+        ]
+    },
+    {
+        "id": "6e2bd175.deae",
+        "type": "http response",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 671,
+        "y": 114,
+        "wires": []
+    },
+    {
+        "id": "bdff45ff.0e79b8",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Create Access URI",
+        "rules": [
+            {
+                "t": "set",
+                "p": "redirectURI",
+                "pt": "global",
+                "to": "payload.redirect_uri",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "honeywellAPIKey",
+                "pt": "global",
+                "to": "payload.client_id",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "honeywellConsumerSecert",
+                "pt": "global",
+                "to": "payload.consumer_sercet",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 289,
+        "y": 114,
+        "wires": [
+            [
+                "952bcf02.91786",
+                "170d9c10.e789d4"
+            ]
+        ]
+    },
+    {
+        "id": "16218c19.364d84",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Display honeywellAPIKey",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "honeywellAPIKey",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 338,
+        "y": 1112,
+        "wires": [
+            [
+                "1cd01d2c.fa4393"
+            ]
+        ]
+    },
+    {
+        "id": "1cd01d2c.fa4393",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 619,
+        "y": 1112,
+        "wires": []
+    },
+    {
+        "id": "952bcf02.91786",
+        "type": "template",
+        "z": "7300a43a.5e254c",
+        "name": "Submit form",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "\n</form>\n<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <title>My test page</title>\n    <style>\n      form \n\t  {\n        margin: 0 auto;\n        width: 400px;\n        /* To see the outline of the form */\n        padding: 1em;\n        border: 1px solid #CCC;\n        border-radius: 1em;\n      }\n      form div + div {\n        margin-top: 1em;\n      }\n      label {\n        display: inline-block;\n        width: 90px;\n        text-align: right;\n      }\n      input, textarea {\n      font: 1em sans-serif;\n      width: 300px;\n      box-sizing: border-box;\n      border: 1px solid #999;\n      }\n      .button {\n        padding-left: 90px; /* same size as the label elements */\n\t  }\n      button {\n        margin-left: .5em;\n      }\n    </style\n  </head>\n  <body>\n  <form action=https://api.honeywell.com/oauth2/app/login? method=\"get\">\n    <div>\n      <input type=\"hidden\" id=\"api\" name=\"apikey\" value={{payload.client_id}}>  \n    </div>\n    <div>\n      <input type=\"hidden\" id=\"redirect\" name=\"redirect_uri\" value={{payload.redirect_uri}}>  \n    </div>\n    <div>\n      <input type=\"hidden\" id=\"appName\" name=\"app\" value={{payload.app_name}}>  \n    </div>\n    <div>\n      <button type=\"submit\">Submit request</button>\n    </div>\n  </body>\n</html>",
+        "output": "str",
+        "x": 506,
+        "y": 114,
+        "wires": [
+            [
+                "6e2bd175.deae"
+            ]
+        ]
+    },
+    {
+        "id": "342968fb.be3328",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "API Access Request Flow",
+        "info": "",
+        "x": 157,
+        "y": 41,
+        "wires": []
+    },
+    {
+        "id": "f1b234ef.4c9a58",
+        "type": "link in",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "links": [
+            "c9a9af24.724e8",
+            "ed34b654.6ac798",
+            "431e071c.da6b48"
+        ],
+        "x": 284,
+        "y": 633,
+        "wires": [
+            [
+                "6cf25dd8.886894",
+                "b2068646.1556e8"
+            ]
+        ]
+    },
+    {
+        "id": "ed34b654.6ac798",
+        "type": "link out",
+        "z": "7300a43a.5e254c",
+        "name": "AccessToken",
+        "links": [
+            "f1b234ef.4c9a58"
+        ],
+        "x": 1306,
+        "y": 308,
+        "wires": []
+    },
+    {
+        "id": "cbc2ea.829b4d18",
+        "type": "file",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "filename": "/data/token.log",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "x": 1094,
+        "y": 342,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "170d9c10.e789d4",
+        "type": "file",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "filename": "/data/apiKey.log",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "x": 515,
+        "y": 147,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "947e9eb6.caec2",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Display honeywellConsumerSecert",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "honeywellConsumerSecert",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 368,
+        "y": 1146,
+        "wires": [
+            [
+                "ef4cef9c.4d706"
+            ]
+        ]
+    },
+    {
+        "id": "ef4cef9c.4d706",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 619,
+        "y": 1146,
+        "wires": []
+    },
+    {
+        "id": "b2068646.1556e8",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "Define Globals / executeLyricTstatCMD",
+        "func": "\ncontext.global.executeLyricTstatCMD = function (lyricName,command,Param) {\n    var WinkCMDmsg = {};\n    if (1){ \n        var cmd = command.toLowerCase();\n        var xParam = (typeof Param === 'string' ? Param.toLowerCase() : Param);\n        node.warn(lyricName+' '+cmd+' '+xParam);\n        \n        try {\n            if (1)\n            {\n                node.warn(\"context.global.thermostats\");\n\n                if (cmd != \"fan\"){\n                WinkCMDmsg ={\n                        \"url\":\"https://api.honeywell.com/v2/devices/thermostats/\"+context.global.LyricState[lyricName].device_id+\"?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n                    \"method\": \"POST\",\n                    headers: {\n                        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n                    },\n                    //payload set in switch statement below\n                };\n                }\n                switch (cmd){\n                    case 'mode':\n                        if (devCapbs[context.global.searchArray(devCapbs,'mode','field')]!=-1 ){\n                            WinkCMDmsg.payload={\n                                \"mode\":xParam ,\n                                \"coolSetpoint\": context.global.LyricState[lyricName].cool_set_point,\n                                \"heatSetpoint\": context.global.LyricState[lyricName].heat_set_point,\n                                \"thermostatSetpointStatus\": \"TemporaryHold\"\n                            };\n                        } else WinkCmd={};\n                    break;\n                    case 'temperature':\n                        WinkCMDmsg.payload={\n                            \"mode\":context.global.LyricState[lyricName].last_reading.mode,\n                            \"coolSetpoint\": xParam,\n                            \"heatSetpoint\": xParam,//context.global.winkState.thermostats[lyricName].heat_set_point,\n                            \"thermostatSetpointStatus\": \"TemporaryHold\"\n                        };\n                    break;\n                    case 'adjust':\n                        WinkCMDmsg.payload={\n                            \"mode\":context.global.LyricState[lyricName].last_reading.mode,\n                            \"coolSetpoint\": (context.global.LyricState[lyricName].cool_set_point +xParam),\n                            \"heatSetpoint\": (context.global.LyricState[lyricName].heat_set_point +xParam),\n                            \"thermostatSetpointStatus\": \"TemporaryHold\"\n                        };\n                    break;\n                    case 'fan':\n                        WinkCMDmsg ={\n                            \"url\":\"https://api.honeywell.com/v2/devices/thermostats/\"+context.global.honeywellLyricDeviceID+\"/fan?apikey=\"+context.global.honeywellAPIKey+\"&locationId=\"+context.global.honeywellLyricLocationID,\n                            \"method\": \"POST\",\n                            headers: {\n                                \"Authorization\":\"Bearer \"+context.global.honeywellLyricAccessToken\n                            },    \n                            payload:{\n                                \"mode\":xParam                            \n                            }};                          \n                    break;                     \n                    default:\n                    WinkCMDmsg={};    \n                }\n            }\n        }\n        catch (error){\n                node.warn('execute tStat CMD error: '+ error.message);\n        }        \n    }\n    node.warn(WinkCMDmsg);\n    return WinkCMDmsg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 502,
+        "y": 633,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a99649ce.84b178",
+        "type": "inject",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "x": 140.99996948242188,
+        "y": 459,
+        "wires": [
+            [
+                "b0221240.ea1c3",
+                "3c66951f.6f7a4a"
+            ]
+        ]
+    },
+    {
+        "id": "b0221240.ea1c3",
+        "type": "file in",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "filename": "/data/token.log",
+        "format": "lines",
+        "chunk": false,
+        "sendError": true,
+        "x": 343.9999694824219,
+        "y": 459,
+        "wires": [
+            [
+                "d3201286.e2665"
+            ]
+        ]
+    },
+    {
+        "id": "f069b7d3.cb5798",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 693.9999694824219,
+        "y": 425,
+        "wires": []
+    },
+    {
+        "id": "60132e41.51446",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Set honeywellLyricRefreshToken",
+        "rules": [
+            {
+                "t": "set",
+                "p": "honeywellLyricRefreshToken",
+                "pt": "global",
+                "to": "payload.refresh_token",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "honeywellLyricAccessToken",
+                "pt": "global",
+                "to": "payload.access_token",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 752.9999694824219,
+        "y": 459,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d3201286.e2665",
+        "type": "json",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "pretty": "false",
+        "x": 525.9999694824219,
+        "y": 459,
+        "wires": [
+            [
+                "60132e41.51446",
+                "f069b7d3.cb5798"
+            ]
+        ]
+    },
+    {
+        "id": "3c66951f.6f7a4a",
+        "type": "file in",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "filename": "/data/apiKey.log",
+        "format": "lines",
+        "chunk": false,
+        "x": 343.9999694824219,
+        "y": 493,
+        "wires": [
+            [
+                "44fb79e3.a7da28"
+            ]
+        ]
+    },
+    {
+        "id": "89ebdccd.d06e1",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Set honeywellAPIKey",
+        "rules": [
+            {
+                "t": "set",
+                "p": "honeywellAPIKey",
+                "pt": "global",
+                "to": "payload.client_id",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "honeywellConsumerSecert",
+                "pt": "global",
+                "to": "payload.consumer_sercet",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "redirectURI",
+                "pt": "msg",
+                "to": "payload.redirect_uri",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 722.9999694824219,
+        "y": 493,
+        "wires": [
+            [
+                "431e071c.da6b48"
+            ]
+        ]
+    },
+    {
+        "id": "44fb79e3.a7da28",
+        "type": "json",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "pretty": "false",
+        "x": 525.9999694824219,
+        "y": 493,
+        "wires": [
+            [
+                "89ebdccd.d06e1",
+                "56e7d4a2.ae6b9c"
+            ]
+        ]
+    },
+    {
+        "id": "431e071c.da6b48",
+        "type": "link out",
+        "z": "7300a43a.5e254c",
+        "name": "FileRead",
+        "links": [
+            "7e34de75.36545",
+            "f1b234ef.4c9a58"
+        ],
+        "x": 863.9999694824219,
+        "y": 493,
+        "wires": []
+    },
+    {
+        "id": "56e7d4a2.ae6b9c",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 692.9999694824219,
+        "y": 527,
+        "wires": []
+    },
+    {
+        "id": "91abc6.bcf1b438",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "Retrieve Tokens at start up",
+        "info": "",
+        "x": 157.99996948242188,
+        "y": 415,
+        "wires": []
+    },
+    {
+        "id": "68be8150.0568",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 1217,
+        "y": 823,
+        "wires": []
+    }
+]

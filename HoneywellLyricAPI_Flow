@@ -16,10 +16,11 @@
         "url": "",
         "tls": "",
         "x": 811.8050003051758,
-        "y": 715.0708160400391,
+        "y": 690.0708160400391,
         "wires": [
             [
-                "1b7b0564.23383b"
+                "1b7b0564.23383b",
+                "8c99e296.8ca7"
             ]
         ]
     },
@@ -28,11 +29,11 @@
         "type": "function",
         "z": "7300a43a.5e254c",
         "name": "Get Location ID",
-        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v1/locations?apikey=\"+global.get(\"honeywellAPIKey\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;\n\n\n//\"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=8bFYM0sl5YI7SyYgzz4Qv7IqqBUq19Do&locationId=138889\",",
+        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v1/locations?apikey=\"+global.get(\"honeywellAPIKey\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;",
         "outputs": 1,
         "noerr": 0,
         "x": 645.8015975952148,
-        "y": 715.1334285736084,
+        "y": 690.1334285736084,
         "wires": [
             [
                 "c66e693f.658c18"
@@ -49,7 +50,7 @@
         "url": "",
         "tls": "",
         "x": 628.8605270385742,
-        "y": 669.3209447860718,
+        "y": 644.3209447860718,
         "wires": [
             [
                 "aea91182.42ae4",
@@ -62,11 +63,11 @@
         "type": "function",
         "z": "7300a43a.5e254c",
         "name": "Request Acess Token",
-        "func": "var b = new Buffer(global.get(\"honeywellAPIKey\")+\":\"+global.get(\"honeywellConsumerSecert\"));\nglobal.set(\"honeywellOauth2Token\", b.toString('base64'));\n\nvar LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/oauth2/token\",\n    \"method\": \"POST\",\n    headers:\n    {\n        \"Authorization\":global.get(\"honeywellOauth2Token\"),\n        \"Content-Type\": \"application/x-www-form-urlencoded\"\n    },\n    payload:\n    {\n        \"grant_type\":\"refresh_token\",\n        \"refresh_token\":global.get(\"honeywellLyricRefreshToken\")\n    }\n};\n    //node.warn(LyricCMDmsg);\n    node.send(LyricCMDmsg);\nreturn; ",
+        "func": "var b = new Buffer(global.get(\"honeywellAPIKey\")+\":\"+global.get(\"honeywellConsumerSecert\"));\nglobal.set(\"honeywellOauth2Token\", b.toString('base64'));\n\nvar LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/oauth2/token\",\n    \"method\": \"POST\",\n    headers:\n    {\n        \"Authorization\":global.get(\"honeywellOauth2Token\"),\n        \"Content-Type\": \"application/x-www-form-urlencoded\"\n    },\n    payload:\n    {\n        \"grant_type\":\"refresh_token\",\n        \"refresh_token\":global.get(\"honeywellLyricRefreshToken\")\n    }\n};\n\nnode.send(LyricCMDmsg);\nreturn; ",
         "outputs": 1,
         "noerr": 0,
         "x": 439.85700607299805,
-        "y": 669.383318901062,
+        "y": 644.383318901062,
         "wires": [
             [
                 "fb81a72c.a3b518"
@@ -86,7 +87,7 @@
         "once": false,
         "onceDelay": "",
         "x": 190.04230499267578,
-        "y": 668.8270740509033,
+        "y": 643.8270740509033,
         "wires": [
             [
                 "6cf25dd8.886894"
@@ -112,8 +113,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 455.86048126220703,
-        "y": 715.3208055496216,
+        "x": 451.8604736328125,
+        "y": 690.32080078125,
         "wires": [
             [
                 "6fa5bda1.512264"
@@ -124,12 +125,12 @@
         "id": "99fb2b9a.23c438",
         "type": "function",
         "z": "7300a43a.5e254c",
-        "name": "Honeywell Lyric Integration",
-        "func": "var honeywellLyric=msg.payload;\nvar msgs=[];\n\nif (typeof context.global.LyricState=='undefined'){ context.global.LyricState = new Object({}); }\n\nif (Object.prototype.toString.call(honeywellLyric)==='[object Array]'){\n    \n    honeywellLyric.forEach(function (therm) {\n\n        //node.warn(\"Importing: \"+therm.name+\" thermostat\");\n        \n        context.global.LyricState[therm.name] = {\n            \"name\":therm.name,\n            \"eco_system\": \"Honeywell Lyric\",\n            \"device_id\": therm.deviceID,\n            \"device_manufacturer\":\"Honeywell\",\n            \"object_type\": therm.deviceType.toLowerCase(),\n            \"last_reading\": {\n                \"connection\": therm.isProvisioned,\n                \"mode\": therm.changeableValues.mode,\n                \"fan_mode\": therm.settings.fan.changeableValues.mode,\n                \"temperature\": therm.indoorTemperature,\n                \"units\":therm.units,\n                \"humidity\": therm.displayedOutdoorHumidity,\n                \"external_temperature\": therm.outdoorTemperature,\n                \"powered\": therm.operationStatus.mode,\n                \"users_away\":therm.vacationHold.enabled,\n                \"scheduleStatus\":therm.scheduleStatus,\n                \"cool_set_point\": therm.changeableValues.coolSetpoint,\n                \"heat_set_point\": therm.changeableValues.heatSetpoint,\n                \"minHeatSetpoint\": therm.minHeatSetpoint,\n                \"maxHeatSetpoint\": therm.maxHeatSetpoint,\n                \"minCoolSetpoint\": therm.minCoolSetpoint,\n                \"maxCoolSetpoint\": therm.maxCoolSetpoint,\n                \"heatCoolMode\": therm.operationStatus.mode\n            },\n\n        };\n\n        //node.warn(context.global.LyricState[therm.name]);\n\n        msgs.push({name: context.global.LyricState[therm.name].name,\n            payload: context.global.LyricState[therm.name]});\n    });//for each therm\n}\n\nreturn {msgs};\n",
+        "name": "Honeywell Lyric Object",
+        "func": "var honeywellLyric=msg.payload;\nvar msgs=[];\n\nif (typeof context.global.LyricState=='undefined'){ context.global.LyricState = new Object({}); }\n\nif (Object.prototype.toString.call(honeywellLyric)==='[object Array]'){\n    \n    honeywellLyric.forEach(function (therm) {\n\n        //node.warn(\"Importing: \"+therm.name+\" thermostat\");\n        \n        context.global.LyricState[therm.name] = {\n            \"name\":therm.name,\n            \"eco_system\": \"Honeywell Lyric\",\n            \"device_id\": therm.deviceID,\n            \"device_manufacturer\":\"Honeywell\",\n            \"object_type\": therm.deviceType.toLowerCase(),\n            \"last_reading\": {\n                \"connection\": therm.isProvisioned,\n                \"mode\": therm.changeableValues.mode,\n                \"fan_mode\": therm.settings.fan.changeableValues.mode,\n                \"temperature\": therm.indoorTemperature,\n                \"units\":therm.units,\n                \"humidity\": therm.displayedOutdoorHumidity,\n                \"external_temperature\": therm.outdoorTemperature,\n                \"users_away\":therm.vacationHold.enabled,\n                \"scheduleStatus\":therm.scheduleStatus,\n                \"cool_set_point\": therm.changeableValues.coolSetpoint,\n                \"heat_set_point\": therm.changeableValues.heatSetpoint,\n                \"heatCoolMode\": therm.operationStatus.mode\n            },\n\n        };\n\n        //node.warn(context.global.LyricState[therm.name]);\n\n        msgs.push({name: context.global.LyricState[therm.name].name,\n            payload: context.global.LyricState[therm.name]});\n    });//for each therm\n}\n\nreturn msgs;\n",
         "outputs": 1,
         "noerr": 0,
-        "x": 1016.8959350585938,
-        "y": 822.8944702148438,
+        "x": 996.8959350585938,
+        "y": 797.8944702148438,
         "wires": [
             [
                 "68be8150.0568"
@@ -142,10 +143,12 @@
         "z": "7300a43a.5e254c",
         "name": "",
         "active": false,
-        "console": "false",
-        "complete": "true",
-        "x": 1171.5641784667969,
-        "y": 714.3775815963745,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 1174.5641784667969,
+        "y": 690.3775815963745,
         "wires": []
     },
     {
@@ -222,7 +225,7 @@
         "url": "",
         "tls": "",
         "x": 476.3080749511719,
-        "y": 975.5858764648438,
+        "y": 974.5858764648438,
         "wires": [
             [
                 "30507bfe.debcc4"
@@ -272,20 +275,22 @@
         "active": true,
         "console": "false",
         "complete": "payload",
-        "x": 681.2491149902344,
-        "y": 975.7108154296875,
+        "x": 635.2491149902344,
+        "y": 974.7108154296875,
         "wires": []
     },
     {
         "id": "7c70ff8c.3052",
         "type": "debug",
         "z": "7300a43a.5e254c",
-        "name": "",
+        "name": "access_token",
         "active": false,
-        "console": "false",
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
         "complete": "payload",
-        "x": 827.8049621582031,
-        "y": 669.070725440979,
+        "x": 820.8049621582031,
+        "y": 644.070725440979,
         "wires": []
     },
     {
@@ -314,11 +319,11 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 494.8048858642578,
-        "y": 770.0707788467407,
+        "x": 469.8048858642578,
+        "y": 745.0707788467407,
         "wires": [
             [
-                "bed9d9ce.c43658"
+                "eb8864ca.7ff6c8"
             ]
         ]
     },
@@ -326,12 +331,14 @@
         "id": "57e4ecd7.6141b4",
         "type": "debug",
         "z": "7300a43a.5e254c",
-        "name": "",
+        "name": "Return JSON Object",
         "active": true,
-        "console": "false",
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
         "complete": "payload",
-        "x": 1056.8048934936523,
-        "y": 770.0707168579102,
+        "x": 1137.8048934936523,
+        "y": 745.0707168579102,
         "wires": []
     },
     {
@@ -343,7 +350,7 @@
         "outputs": 1,
         "noerr": 0,
         "x": 983.7459411621094,
-        "y": 714.5429410934448,
+        "y": 690.5429410934448,
         "wires": [
             [
                 "ec18394b.b39f78",
@@ -355,33 +362,17 @@
         "id": "b4eacba4.f98d58",
         "type": "http request",
         "z": "7300a43a.5e254c",
-        "name": "",
+        "name": "Return JSON Object",
         "method": "use",
         "ret": "obj",
         "url": "",
         "tls": "",
-        "x": 864.8048782348633,
-        "y": 770.0707082748413,
+        "x": 894.8048782348633,
+        "y": 745.0707082748413,
         "wires": [
             [
                 "57e4ecd7.6141b4",
                 "99fb2b9a.23c438"
-            ]
-        ]
-    },
-    {
-        "id": "bed9d9ce.c43658",
-        "type": "function",
-        "z": "7300a43a.5e254c",
-        "name": "Get Devices",
-        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;\n\n//\"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=8bFYM0sl5YI7SyYgzz4Qv7IqqBUq19Do&locationId=138889\",",
-        "outputs": 1,
-        "noerr": 0,
-        "x": 699.8014755249023,
-        "y": 770.1333208084106,
-        "wires": [
-            [
-                "b4eacba4.f98d58"
             ]
         ]
     },
@@ -424,7 +415,7 @@
         "type": "http response",
         "z": "7300a43a.5e254c",
         "name": "",
-        "x": 591.8958435058594,
+        "x": 584.8958435058594,
         "y": 258.888916015625,
         "wires": []
     },
@@ -438,8 +429,8 @@
         "console": false,
         "tostatus": false,
         "complete": "payload",
-        "x": 505.895751953125,
-        "y": 347.88885498046875,
+        "x": 511.895751953125,
+        "y": 341.88885498046875,
         "wires": []
     },
     {
@@ -595,7 +586,7 @@
         "name": "Sample Flow for setting device data",
         "info": "",
         "x": 190.99998474121094,
-        "y": 846,
+        "y": 842,
         "wires": []
     },
     {
@@ -616,7 +607,7 @@
         "active": true,
         "console": "false",
         "complete": "true",
-        "x": 899,
+        "x": 900,
         "y": 274,
         "wires": []
     },
@@ -670,13 +661,14 @@
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 138,
-        "y": 1078,
+        "x": 122,
+        "y": 1128,
         "wires": [
             [
                 "c2803938.8f8ff8",
                 "16218c19.364d84",
-                "947e9eb6.caec2"
+                "947e9eb6.caec2",
+                "8789d267.bf645"
             ]
         ]
     },
@@ -715,7 +707,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "\n</form>\n<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <title>My test page</title>\n    <style>\n      form \n\t  {\n        /* Just to center the form on the page */\n        margin: 0 auto;\n        width: 400px;\n        /* To see the outline of the form */\n        padding: 1em;\n        border: 1px solid #CCC;\n        border-radius: 1em;\n      }\n\n      form div + div {\n        margin-top: 1em;\n      }\n \n      label {\n        /* To make sure that all labels have the same size and are properly aligned */\n        display: inline-block;\n        width: 90px;\n        text-align: right;\n      }\n      \n      input, textarea {\n      /* To make sure that all text fields have the same font settings\n      By default, textareas have a monospace font */\n      font: 1em sans-serif;\n\n      /* To give the same size to all text fields */\n      width: 300px;\n      box-sizing: border-box;\n\n      /* To harmonize the look & feel of text field border */\n      border: 1px solid #999;\n      }\n\n      .button {\n      /* To position the buttons to the same position of the text fields */\n        padding-left: 90px; /* same size as the label elements */\n\t  }\n\n      button {\n        /* This extra margin represent roughly the same space as the space\n        between the labels and their text fields */\n        margin-left: .5em;\n      }\n    </style\n  </head>\n  <body>\n  <form action=\"/lyric\" method=\"post\">\n    <div>\n      <label for=\"redirect\">Redirect URI:</label>\n      <input type=\"text\" id=\"redirect\" name=\"redirect_uri\">\n    </div>\n    <div>\n      <label for=\"api\">Consumer Key:</label>\n      <input type=\"text\" id=\"api\" name=\"client_id\">\n    </div>\n    <div>\n      <label for=\"secert\">Consumer Secert:</label>\n      <input type=\"text\" id=\"secert\" name=\"consumer_sercet\">\n    </div>\n    <div>\n      <label for=\"app\">App Name:</label>\n      <input type=\"text\" id=\"app\" name=\"app_name\">\n    </div>\n    <div>\n    <div class=\"button\">\n      <button type=\"submit\">Save Data</button>\n    </div>\n  </body>\n</html>",
+        "template": "\n</form>\n<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <title>Honeywell Intergration</title>\n    <style>\n      form \n\t  {\n        /* Just to center the form on the page */\n        margin: 0 auto;\n        width: 400px;\n        /* To see the outline of the form */\n        padding: 1em;\n        border: 1px solid #CCC;\n        border-radius: 1em;\n      }\n\n      form div + div {\n        margin-top: 1em;\n      }\n \n      label {\n        /* To make sure that all labels have the same size and are properly aligned */\n        display: inline-block;\n        width: 90px;\n        text-align: right;\n      }\n      \n      input, textarea {\n      /* To make sure that all text fields have the same font settings\n      By default, textareas have a monospace font */\n      font: 1em sans-serif;\n\n      /* To give the same size to all text fields */\n      width: 300px;\n      box-sizing: border-box;\n\n      /* To harmonize the look & feel of text field border */\n      border: 1px solid #999;\n      }\n\n      .button {\n      /* To position the buttons to the same position of the text fields */\n        padding-left: 90px; /* same size as the label elements */\n\t  }\n\n      button {\n        /* This extra margin represent roughly the same space as the space\n        between the labels and their text fields */\n        margin-left: .5em;\n      }\n    </style\n  </head>\n  <body>\n  <form action=\"/lyric\" method=\"post\">\n    <div>\n      <label for=\"redirect\">Redirect URI:</label>\n      <input type=\"text\" id=\"redirect\" name=\"redirect_uri\">\n    </div>\n    <div>\n      <label for=\"api\">Consumer Key:</label>\n      <input type=\"text\" id=\"api\" name=\"client_id\">\n    </div>\n    <div>\n      <label for=\"secert\">Consumer Secert:</label>\n      <input type=\"text\" id=\"secert\" name=\"consumer_sercet\">\n    </div>\n    <div>\n      <label for=\"app\">App Name:</label>\n      <input type=\"text\" id=\"app\" name=\"app_name\">\n    </div>\n    <div>\n    <div class=\"button\">\n      <button type=\"submit\">Save Data</button>\n    </div>\n  </body>\n</html>",
         "output": "str",
         "x": 288,
         "y": 77,
@@ -749,7 +741,7 @@
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 671,
+        "x": 647,
         "y": 114,
         "wires": []
     },
@@ -843,7 +835,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "\n</form>\n<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <title>My test page</title>\n    <style>\n      form \n\t  {\n        margin: 0 auto;\n        width: 400px;\n        /* To see the outline of the form */\n        padding: 1em;\n        border: 1px solid #CCC;\n        border-radius: 1em;\n      }\n      form div + div {\n        margin-top: 1em;\n      }\n      label {\n        display: inline-block;\n        width: 90px;\n        text-align: right;\n      }\n      input, textarea {\n      font: 1em sans-serif;\n      width: 300px;\n      box-sizing: border-box;\n      border: 1px solid #999;\n      }\n      .button {\n        padding-left: 90px; /* same size as the label elements */\n\t  }\n      button {\n        margin-left: .5em;\n      }\n    </style\n  </head>\n  <body>\n  <form action=https://api.honeywell.com/oauth2/app/login? method=\"get\">\n    <div>\n      <input type=\"hidden\" id=\"api\" name=\"apikey\" value={{payload.client_id}}>  \n    </div>\n    <div>\n      <input type=\"hidden\" id=\"redirect\" name=\"redirect_uri\" value={{payload.redirect_uri}}>  \n    </div>\n    <div>\n      <input type=\"hidden\" id=\"appName\" name=\"app\" value={{payload.app_name}}>  \n    </div>\n    <div>\n      <button type=\"submit\">Submit request</button>\n    </div>\n  </body>\n</html>",
+        "template": "\n</form>\n<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <title>Honeywell Intergration</title>\n    <style>\n      form \n\t  {\n        margin: 0 auto;\n        width: 400px;\n        /* To see the outline of the form */\n        padding: 1em;\n        border: 1px solid #CCC;\n        border-radius: 1em;\n      }\n      form div + div {\n        margin-top: 1em;\n      }\n      label {\n        display: inline-block;\n        width: 90px;\n        text-align: right;\n      }\n      input, textarea {\n      font: 1em sans-serif;\n      width: 300px;\n      box-sizing: border-box;\n      border: 1px solid #999;\n      }\n      .button {\n        padding-left: 90px; /* same size as the label elements */\n\t  }\n      button {\n        margin-left: .5em;\n      }\n    </style\n  </head>\n  <body>\n  <form action=https://api.honeywell.com/oauth2/app/login? method=\"get\">\n    <div>\n      <input type=\"hidden\" id=\"api\" name=\"apikey\" value={{payload.client_id}}>  \n    </div>\n    <div>\n      <input type=\"hidden\" id=\"redirect\" name=\"redirect_uri\" value={{payload.redirect_uri}}>  \n    </div>\n    <div>\n      <input type=\"hidden\" id=\"appName\" name=\"app\" value={{payload.app_name}}>  \n    </div>\n    <div>\n      <button type=\"submit\">Submit request</button>\n    </div>\n  </body>\n</html>",
         "output": "str",
         "x": 506,
         "y": 114,
@@ -874,7 +866,7 @@
             "431e071c.da6b48"
         ],
         "x": 284,
-        "y": 633,
+        "y": 608,
         "wires": [
             [
                 "6cf25dd8.886894",
@@ -968,11 +960,11 @@
         "type": "function",
         "z": "7300a43a.5e254c",
         "name": "Define Globals / executeLyricTstatCMD",
-        "func": "\ncontext.global.executeLyricTstatCMD = function (lyricName,command,Param) {\n    var WinkCMDmsg = {};\n    if (1){ \n        var cmd = command.toLowerCase();\n        var xParam = (typeof Param === 'string' ? Param.toLowerCase() : Param);\n        node.warn(lyricName+' '+cmd+' '+xParam);\n        \n        try {\n            if (1)\n            {\n                node.warn(\"context.global.thermostats\");\n\n                if (cmd != \"fan\"){\n                WinkCMDmsg ={\n                        \"url\":\"https://api.honeywell.com/v2/devices/thermostats/\"+context.global.LyricState[lyricName].device_id+\"?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n                    \"method\": \"POST\",\n                    headers: {\n                        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n                    },\n                    //payload set in switch statement below\n                };\n                }\n                switch (cmd){\n                    case 'mode':\n                        if (devCapbs[context.global.searchArray(devCapbs,'mode','field')]!=-1 ){\n                            WinkCMDmsg.payload={\n                                \"mode\":xParam ,\n                                \"coolSetpoint\": context.global.LyricState[lyricName].cool_set_point,\n                                \"heatSetpoint\": context.global.LyricState[lyricName].heat_set_point,\n                                \"thermostatSetpointStatus\": \"TemporaryHold\"\n                            };\n                        } else WinkCmd={};\n                    break;\n                    case 'temperature':\n                        WinkCMDmsg.payload={\n                            \"mode\":context.global.LyricState[lyricName].last_reading.mode,\n                            \"coolSetpoint\": xParam,\n                            \"heatSetpoint\": xParam,//context.global.winkState.thermostats[lyricName].heat_set_point,\n                            \"thermostatSetpointStatus\": \"TemporaryHold\"\n                        };\n                    break;\n                    case 'adjust':\n                        WinkCMDmsg.payload={\n                            \"mode\":context.global.LyricState[lyricName].last_reading.mode,\n                            \"coolSetpoint\": (context.global.LyricState[lyricName].cool_set_point +xParam),\n                            \"heatSetpoint\": (context.global.LyricState[lyricName].heat_set_point +xParam),\n                            \"thermostatSetpointStatus\": \"TemporaryHold\"\n                        };\n                    break;\n                    case 'fan':\n                        WinkCMDmsg ={\n                            \"url\":\"https://api.honeywell.com/v2/devices/thermostats/\"+context.global.honeywellLyricDeviceID+\"/fan?apikey=\"+context.global.honeywellAPIKey+\"&locationId=\"+context.global.honeywellLyricLocationID,\n                            \"method\": \"POST\",\n                            headers: {\n                                \"Authorization\":\"Bearer \"+context.global.honeywellLyricAccessToken\n                            },    \n                            payload:{\n                                \"mode\":xParam                            \n                            }};                          \n                    break;                     \n                    default:\n                    WinkCMDmsg={};    \n                }\n            }\n        }\n        catch (error){\n                node.warn('execute tStat CMD error: '+ error.message);\n        }        \n    }\n    node.warn(WinkCMDmsg);\n    return WinkCMDmsg;\n}",
+        "func": "\ncontext.global.executeLyricTstatCMD = function (lyricName,command,Param) {\n    var WinkCMDmsg = {};\n    if (1){ \n        var cmd = command.toLowerCase();\n        var xParam = (typeof Param === 'string' ? Param.toLowerCase() : Param);\n        node.warn(lyricName+' '+cmd+' '+xParam);\n        \n        try {\n            if (1)\n            {\n                //node.warn(\"context.global.thermostats\");\n\n                if (cmd != \"fan\"){\n                WinkCMDmsg ={\n                        \"url\":\"https://api.honeywell.com/v2/devices/thermostats/\"+context.global.LyricState[lyricName].device_id+\"?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n                    \"method\": \"POST\",\n                    headers: {\n                        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n                    },\n                    //payload set in switch statement below\n                };\n                }\n                switch (cmd){\n                    case 'mode':\n                        if (devCapbs[context.global.searchArray(devCapbs,'mode','field')]!=-1 ){\n                            WinkCMDmsg.payload={\n                                \"mode\":xParam ,\n                                \"coolSetpoint\": context.global.LyricState[lyricName].cool_set_point,\n                                \"heatSetpoint\": context.global.LyricState[lyricName].heat_set_point,\n                                \"thermostatSetpointStatus\": \"TemporaryHold\"\n                            };\n                        } else WinkCmd={};\n                    break;\n                    case 'temperature':\n                        WinkCMDmsg.payload={\n                            \"mode\":context.global.LyricState[lyricName].last_reading.mode,\n                            \"coolSetpoint\": xParam,\n                            \"heatSetpoint\": xParam,//context.global.winkState.thermostats[lyricName].heat_set_point,\n                            \"thermostatSetpointStatus\": \"TemporaryHold\"\n                        };\n                    break;\n                    case 'adjust':\n                        WinkCMDmsg.payload={\n                            \"mode\":context.global.LyricState[lyricName].last_reading.mode,\n                            \"coolSetpoint\": (context.global.LyricState[lyricName].cool_set_point +xParam),\n                            \"heatSetpoint\": (context.global.LyricState[lyricName].heat_set_point +xParam),\n                            \"thermostatSetpointStatus\": \"TemporaryHold\"\n                        };\n                    break;\n                    case 'fan':\n                        WinkCMDmsg ={\n                            \"url\":\"https://api.honeywell.com/v2/devices/thermostats/\"+context.global.honeywellLyricDeviceID+\"/fan?apikey=\"+context.global.honeywellAPIKey+\"&locationId=\"+context.global.honeywellLyricLocationID,\n                            \"method\": \"POST\",\n                            headers: {\n                                \"Authorization\":\"Bearer \"+context.global.honeywellLyricAccessToken\n                            },    \n                            payload:{\n                                \"mode\":xParam                            \n                            }};                          \n                    break;                     \n                    default:\n                    WinkCMDmsg={};    \n                }\n            }\n        }\n        catch (error){\n                node.warn('execute tStat CMD error: '+ error.message);\n        }        \n    }\n    //node.warn(WinkCMDmsg);\n    return WinkCMDmsg;\n}",
         "outputs": 1,
         "noerr": 0,
-        "x": 502,
-        "y": 633,
+        "x": 490,
+        "y": 608,
         "wires": [
             []
         ]
@@ -1019,7 +1011,7 @@
         "type": "debug",
         "z": "7300a43a.5e254c",
         "name": "",
-        "active": true,
+        "active": false,
         "console": "false",
         "complete": "payload",
         "x": 693.9999694824219,
@@ -1163,7 +1155,7 @@
         "type": "debug",
         "z": "7300a43a.5e254c",
         "name": "",
-        "active": true,
+        "active": false,
         "console": "false",
         "complete": "payload",
         "x": 692.9999694824219,
@@ -1186,10 +1178,81 @@
         "z": "7300a43a.5e254c",
         "name": "",
         "active": true,
-        "console": "false",
-        "complete": "true",
-        "x": 1217,
-        "y": 823,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 1187,
+        "y": 798,
         "wires": []
+    },
+    {
+        "id": "8c99e296.8ca7",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 1029,
+        "y": 654,
+        "wires": []
+    },
+    {
+        "id": "8789d267.bf645",
+        "type": "change",
+        "z": "7300a43a.5e254c",
+        "name": "Display honeywellLyricAccessToken",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "honeywellLyricAccessToken",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 378,
+        "y": 1180,
+        "wires": [
+            [
+                "d3def53f.152fb8"
+            ]
+        ]
+    },
+    {
+        "id": "d3def53f.152fb8",
+        "type": "debug",
+        "z": "7300a43a.5e254c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "payload",
+        "x": 619,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "eb8864ca.7ff6c8",
+        "type": "function",
+        "z": "7300a43a.5e254c",
+        "name": "\"GET\" Devices",
+        "func": "LyricCMDmsg ={\n    \"url\":\"https://api.honeywell.com/v2/devices/thermostats?apikey=\"+global.get(\"honeywellAPIKey\")+\"&locationId=\"+global.get(\"honeywellLyricLocationID\"),\n    \"method\": \"GET\",\n    headers:\n    {\n        \"Authorization\":\"Bearer \"+global.get(\"honeywellLyricAccessToken\")\n    }\n};\n    \nreturn LyricCMDmsg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 691,
+        "y": 745,
+        "wires": [
+            [
+                "b4eacba4.f98d58"
+            ]
+        ]
     }
 ]

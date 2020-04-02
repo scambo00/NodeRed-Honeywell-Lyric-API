@@ -130,7 +130,7 @@
         "outputs": 1,
         "noerr": 0,
         "x": 996.8959350585938,
-        "y": 797.8944702148438,
+        "y": 794.8944702148438,
         "wires": [
             [
                 "68be8150.0568"
@@ -1183,7 +1183,7 @@
         "tostatus": false,
         "complete": "payload",
         "x": 1187,
-        "y": 798,
+        "y": 795,
         "wires": []
     },
     {
@@ -1254,5 +1254,15 @@
                 "b4eacba4.f98d58"
             ]
         ]
+    },
+    {
+        "id": "c97f6179.ceb96",
+        "type": "comment",
+        "z": "7300a43a.5e254c",
+        "name": "Example for gobal object created from returned JSON data",
+        "info": "",
+        "x": 1109,
+        "y": 833,
+        "wires": []
     }
 ]

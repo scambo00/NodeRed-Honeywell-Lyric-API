@@ -25,10 +25,19 @@ Here you will create an App that will allow access to your Honeywell Lyric devic
 
 Copy Consumer Key and Consumer Secret to be used later
 
-### 2.8)Log On and Allow access
+### 2.5)Save Keys in Node Red
+In a local browser goto the base url for your node red application /lyric
+and enter the required information and press "Save data"
+<img src='/images/saveData.jpg'/>
+
+### 2.6)Submit
+Press the "Submit" button to be taken to the your Honeywell App login page
+<img src='/images/submit.jpg'/>
+
+### 2.7)Log On and Allow access
 <img src='/images/logOn.jpg'/>
 <img src='/images/allow.jpg'/>
 
-### 2.9)Select devices and Connect
+### 2.8)Select devices and Connect
 <img src='/images/connect.jpg'/>
 

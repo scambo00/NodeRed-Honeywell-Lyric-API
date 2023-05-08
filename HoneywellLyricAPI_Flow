@@ -117,13 +117,6 @@
                 "pt": "global",
                 "to": "payload.access_token",
                 "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "honeywellLyricRefreshToken",
-                "pt": "global",
-                "to": "payload.refresh_token",
-                "tot": "msg"
             }
         ],
         "action": "",
